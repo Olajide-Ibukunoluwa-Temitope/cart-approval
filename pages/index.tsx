@@ -1,65 +1,86 @@
-import Head from 'next/head'
-import Image from 'next/image'
+import React, { useEffect, useState, useMemo } from "react";
+import CartItem from "@/components/CartItem/CartItem.comp";
+import Frame from "@/components/Frame/Frame.comp";
+import useSWR from 'swr';
+import { CartContext } from "context/cartContext";
 
-import styles from '@/pages/index.module.css'
+const isBrowserLoaded = typeof window !== 'undefined';
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
-export default function Home() {
+const CartPage = (): JSX.Element => {
+  const [cartState, setCartState] = useState<any>([]);
+
+  useEffect(() => {
+    const carts = sessionStorage.getItem('cartState') || null;
+    const parsedData = carts === null ? null :  JSON.parse(carts);
+    console.log('parsedData ==>>>', parsedData);
+
+    if (parsedData !== null) {
+      setCartState(parsedData);
+    } else {
+      fetch('https://dummyjson.com/carts?limit=5')
+        .then(res => res.json())
+        .then(data => {
+          sessionStorage.setItem('cartState', JSON.stringify(data.carts))
+          setCartState(data.carts);
+          console.log(data.carts);
+        });
+    }
+
+  }, [isBrowserLoaded]);
+  // console.log('data =>', data);
+  // if (error) return <div>failed to load</div>
+  // if (!data) return <div>loading...</div>
+  
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <CartContext.Provider value={{cartState: cartState}}>
+      <Frame>
+        <div id='main'>
+          <div className="flexRowBetween">
+            <h2>Droppe Xmas &#127876; | Cart</h2>
+            <h2>Total: $0</h2>
+          </div>
+          <div>
+            <label htmlFor="cars">Choose a car:</label>
 
-      <main>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a href="https://vercel.com/new" className={styles.card}>
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+            <select name="cars" id="cars">
+              <option value="volvo">Volvo</option>
+              <option value="saab">Saab</option>
+              <option value="mercedes">Mercedes</option>
+              <option value="audi">Audi</option>
+            </select>
+            <input type="range" min="1" max="100" className="slider" id="myRange" />
+          </div>
+          <div className="itemSection">
+            <div className="flexRowBetween titles">
+              <div className="title">
+                <span>Product Name</span>
+              </div>
+              <div className="title">
+                <span>Quantity</span>
+              </div>
+              <div className="title">
+                <span>Price</span>
+              </div>
+              <div className="title">
+                <span>Accept/Reject</span>
+              </div>
+            </div>
+            <div id='itemsContainer'>
+              {
+                cartState[0]?.products.map(({title, price, quantity, id}: {title: string, price: number, quantity: number, id: number}) => (
+                  <CartItem key={id} title={title} price={price} quantity={quantity} />
+                ))
+              }
+            </div>
+          </div>
         </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
-    </div>
+      </Frame>
+    </CartContext.Provider>
+    
+    
   )
-}
+};
+
+export default CartPage;
+

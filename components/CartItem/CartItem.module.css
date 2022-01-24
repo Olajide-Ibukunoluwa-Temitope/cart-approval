@@ -1,0 +1,37 @@
+.container {
+    width: 100%;
+    background-color: #e6e9ea;
+    min-height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-radius: 0.4rem;
+    font-size: 1rem;
+    margin: 1rem auto;
+}
+
+.section{
+    width: 25%;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+#acceptBtn{
+    padding: 0.6rem 1.5rem;
+    background-color: #4BB543;
+    border: none;
+    border-radius: 0.4rem;
+    color: white;
+    margin: 0 0.2rem;
+}
+
+#rejectBtn{
+    padding: 0.6rem 1.5rem;
+    background-color: tomato;
+    border: none;
+    border-radius: 0.4rem;
+    color: white;
+    margin: 0 0.2rem;
+}
