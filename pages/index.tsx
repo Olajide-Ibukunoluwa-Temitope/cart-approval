@@ -1,39 +1,43 @@
 import React, { useEffect, useState, } from "react";
 import CartItem from "@/components/CartItem/CartItem.comp";
 import Frame from "@/components/Frame/Frame.comp";
-import useSWR from 'swr';
 import { CartContext } from "context/cartContext";
-import _ from 'lodash';
-import { getAllCarts, getSpecificItem } from "utils";
+import _, { filter } from 'lodash';
+import { getAllCarts } from "utils";
 
 const isBrowserLoaded = typeof window !== 'undefined';
-// const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 const CartPage = (): JSX.Element => {
   const [cartState, setCartState] = useState<Array<Record<string, any>>>([]);
+  const [isloading, setIsLoading] = useState<boolean>(true);
   const [activeCart, setActiveCart] = useState<number>(0);
   const [acceptedItems, setAcceptedItems] = useState<Array<Record<string, any>>>([]);
   const [rejectedItems, setRejectedItems] = useState<Array<Record<string, any>>>([]);
+  const [filterValue, setFilterValue] = useState<number>(0);
 
-  const handleSelectCart = (event: React.FormEvent<HTMLSelectElement>) => {
-    setActiveCart(Number(event.currentTarget.value))
-  }
-
-  const j = _.map(acceptedItems, 'total')
-  const g = _.reduce(j, function(sum, n) {
+  const allTotalAcceptedPrices = _.map(acceptedItems, 'total');
+  
+  const totalAcceptedPrice = _.reduce(allTotalAcceptedPrices, function(sum, n) {
     return sum + n;
   }, 0);
 
-  const handleAcceptItem = (id: number) => {
-    console.log(activeCart)
-    console.log('cartState[activeCart]?.products =>', cartState[0]?.products);
-    // let d = [];
+  const totalPrices = _.map(getAllCarts(cartState), 'total');
+  const max = Math.max(...totalPrices);
+  const min = Math.min(...totalPrices);
+
+  const handleSelectCart = (event: React.FormEvent<HTMLSelectElement>) => {
+    setActiveCart(Number(event.currentTarget.value));
+  };
+
+  const handleChangeFilter = (event: React.FormEvent<HTMLInputElement>) => {
+    setFilterValue(Number(event.currentTarget.value));
+  };
+
+  const handleAcceptItem = (item: Record<string, any>) => {
     const allProducts = getAllCarts(cartState)
-    const selectedProject = _.find(allProducts, ['id', id]);
-    const filteredArray = rejectedItems.filter((value) => value.id !== id)
+    const selectedProject = _.find(allProducts, item);
+    const filteredArray = rejectedItems.filter((value) => value !== item)
     
-    console.log('g ===>>', g)
-    console.log('acceptedfilteredArray --->>>', filteredArray)
     setAcceptedItems((prevState) => {
       return [
         ...prevState,
@@ -43,19 +47,15 @@ const CartPage = (): JSX.Element => {
 
     setRejectedItems((prevState) => {
       return [
-        // ...prevState,
         ...filteredArray
       ]
     });
   }
 
-  const handleRejectItem = (id: number) => {
-    console.log(activeCart)
-    console.log('cartState[activeCart]?.products =>', cartState[0]?.products);
-    // let d = [];
+  const handleRejectItem = (item: Record<string, any>) => {
     const allProducts = getAllCarts(cartState)
-    const selectedProject = _.find(allProducts, ['id', id]);
-    const filteredArray = acceptedItems.filter((value) => value.id !== id)
+    const selectedProject = _.find(allProducts, item);
+    const filteredArray = acceptedItems.filter((value) => value !== item)
     console.log('rejectedfilteredArray --->>>', filteredArray)
     setRejectedItems((prevState) => {
       return [
@@ -66,56 +66,120 @@ const CartPage = (): JSX.Element => {
 
     setAcceptedItems((prevState) => {
       return [
-        // ...prevState,
         ...filteredArray
       ]
     });
   }
 
+  const handleAcceptAllItems = () => {
+    let items;
+    let acceptedItems: Record<string, any>[];
+
+    if (activeCart !== cartState.length){
+      acceptedItems = _.uniqWith(cartState[activeCart]?.products, _.isEqual);
+      setAcceptedItems((prevState) => {
+        return [
+          ...prevState,
+          ...acceptedItems,
+        ]
+      });
+      setRejectedItems((prevState) => {
+        return [
+          ...prevState
+        ]
+      });
+    } else {
+      items = getAllCarts(cartState);
+      acceptedItems = _.uniqWith(items, _.isEqual);
+      setAcceptedItems((prevState) => {
+        return [
+          ...acceptedItems,
+        ]
+      });
+      setRejectedItems((prevState) => {
+        return []
+      });
+    }
+
+    
+  };
+
+  const handleRejectAllItems = () => {
+    let items;
+    let rejectedItems: Record<string, any>[];
+
+    if (activeCart !== cartState.length){
+      rejectedItems = _.uniqWith(cartState[activeCart]?.products, _.isEqual);
+      setRejectedItems((prevState) => {
+        return [
+          ...prevState,
+          ...rejectedItems,
+        ]
+      });
+      setAcceptedItems((prevState) => {
+        return [
+          ...prevState
+        ]
+      });
+      
+    } else {
+      items = getAllCarts(cartState);
+      rejectedItems = _.uniqWith(items, _.isEqual);
+      setRejectedItems((prevState) => {
+        return [
+          ...rejectedItems,
+        ]
+      });
+      setAcceptedItems((prevState) => {
+        return []
+      });
+    }
+
+    setRejectedItems((prevState) => {
+      return [
+        ...rejectedItems,
+      ]
+    });
+    setAcceptedItems((prevState) => {
+      return []
+    });
+  }
 
   const displayCorrectCart = (value:number) => {
     switch (value) {
       case cartState.length:
-        const carts = getAllCarts(cartState);
-        console.log('carts==>', carts)
-        return carts.map((
-          {title, price, quantity, total, id}: {title: string, price: number, quantity: number, total:number, id: number}, 
+        const allItems = getAllCarts(cartState);
+        const itemsFilteredByPrice = _.filter(allItems, function(value) { return value?.total <= filterValue; });
+        return itemsFilteredByPrice.map((
+          product, 
           idx: number
-        ) => (
-              <CartItem 
-                key={idx} 
-                title={title} 
-                price={total} 
-                quantity={quantity} 
-                id={id}
-                index={idx}
-              />
-            ));
+        ) => {
+          // const cartIndex = _.findIndex(cartState, {products: [product]});
+
+          return(
+            <CartItem 
+              key={idx}
+              item={product}
+            />
+          )      
+        });
     
       default:
-        // console.log('cartState[activeCart]?.userId =>', cartState[activeCart]?.userId)
-        const childCart = cartState[activeCart]?.products.map((
-          {title, price, quantity, total, id}: {title: string, price: number, quantity: number, total:number, id: number}, 
+        const currentCartProducts = cartState[activeCart]?.products;
+        const productFilteredByPrice = _.filter(currentCartProducts, function(value) { return value?.total <= filterValue; });
+        const childCart = productFilteredByPrice.map((
+          item: Record<string, any>, 
           idx: number
         ) => (
           <CartItem 
-            key={id} 
-            title={title} 
-            price={total} 
-            quantity={quantity} 
-            id={id}
-            index={idx}
-            userId={cartState[activeCart]?.userId}
+            key={item?.id}
+            item={item}
           />
         ));
         return childCart;
     }
   }
-  // console.log('displayCorrectCart ==>', displayCorrectCart(activeCart));
-  console.log('acceptedItems ==>', acceptedItems);
-  console.log('rejectedItems ==>', rejectedItems);
 
-  
 
   useEffect(() => {
     const carts = sessionStorage.getItem('cartState');
@@ -123,20 +187,37 @@ const CartPage = (): JSX.Element => {
     console.log('parsedData ==>>>', parsedData);
 
     if (parsedData !== null) {
+      const totalPrices = _.map(getAllCarts(parsedData), 'total');
+      const max = Math.max(...totalPrices);
+
       setCartState(parsedData);
       setActiveCart(parsedData.length);
+      setFilterValue(max);
+      setIsLoading(false)
     } else {
       fetch('https://dummyjson.com/carts?limit=5')
         .then(res => res.json())
         .then(data => {
+          const totalPrices = _.map(getAllCarts(data.carts), 'total');
+          const max = Math.max(...totalPrices);
+
           sessionStorage.setItem('cartState', JSON.stringify(data.carts))
           setCartState(data.carts);
           setActiveCart(data.carts.length)
-          // console.log(data.carts);
-        });
+          setFilterValue(max)
+          setIsLoading(false)
+        }).catch(err => console.log(err))
     }
-
+    
   }, [isBrowserLoaded]);
+
+  if (isloading) {
+    return (
+      <div id='loading'>
+        <h2>Loading...</h2>
+      </div>
+    )
+  }
   
   return (
     <CartContext.Provider 
@@ -154,19 +235,37 @@ const CartPage = (): JSX.Element => {
         <div id='main'>
           <div className="flexRowBetween">
             <h2>Droppe Xmas &#127876; | Cart</h2>
-            <h2>Total: ${g}</h2>
+            <h2>Total: ${totalAcceptedPrice}</h2>
+          </div>
+          <div className="flexAlignItemCenter" id='cartOptionFeature'>
+            <div className="flexAlignItemCenter" id='cartInputSection'>
+              <div className="flexAlignItemCenter" id='cartInputContainer'>
+                <label htmlFor="cart">Select Cart:</label>
+                
+                <select name="cart" id="cart" onChange={handleSelectCart}>
+                  <option value={cartState.length}>All</option>
+                  {cartState.map((value, idx: number) => (
+                    <option key={idx} value={idx}>Child {idx + 1}</option>
+                  ))}
+                  
+                </select>
+              </div>
+              <div className="flexAlignItemCenter">
+                <label htmlFor="myRange" style={{marginRight: '0.6rem'}}>Filter By Price:</label>
+                <span>${min}</span>
+                <input type="range" min={min} max={max} className="slider" id="myRange" value={filterValue} onChange={handleChangeFilter} />
+                <span>${max}</span>
+                <input type='text' id='filterValue' value={filterValue} disabled />
+              </div>
+            </div>
+            <div className="flexAlignItemCenter">
+              <button type='button' className='acceptBtn' onClick={handleAcceptAllItems} >Accept All</button>
+              <button type='button' className='rejectBtn' onClick={handleRejectAllItems} >Reject All</button>
+            </div>
           </div>
           <div>
-            <label htmlFor="cart">Select Cart:</label>
-
-            <select name="cart" id="cart" onChange={handleSelectCart}>
-              
-              {cartState.map((value, idx: number) => (
-                <option key={idx} value={idx}>Child {idx + 1}</option>
-              ))}
-              <option value={cartState.length}>All</option>
-            </select>
-            <input type="range" min="1" max="100" className="slider" id="myRange" />
+            <p style={{textAlign: 'center'}}>There are a total of {displayCorrectCart(activeCart).length} items in this view</p>
+            <p id='warning'>*All Items left neither accepted nor rejected will be automatically rejected</p>
           </div>
           <div className="itemSection">
             <div className="flexRowBetween titles">
@@ -187,11 +286,12 @@ const CartPage = (): JSX.Element => {
               {displayCorrectCart(activeCart)}
             </div>
           </div>
+          <div id='continueSection'>
+            <button type='button' id='continueBtn' onClick={handleAcceptAllItems}>Continue</button>
+          </div>
         </div>
       </Frame>
     </CartContext.Provider>
-    
-    
   )
 };
 
