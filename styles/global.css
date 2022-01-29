@@ -33,7 +33,7 @@ button{
 #itemsContainer{
   width: 100%;
   align-items: center;
-  height: 24rem;
+  height: 26rem;
   overflow: auto;
 }
 
@@ -106,10 +106,11 @@ button{
 
 #warning {
   color: red;
+  margin: 0;
 }
 
 #continueSection{
-  margin-top: 2rem;
+  /* margin-top: 1rem; */
   width: 100%;
   display: flex;
   justify-content: flex-end;

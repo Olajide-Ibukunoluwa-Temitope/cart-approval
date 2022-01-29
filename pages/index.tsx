@@ -21,7 +21,8 @@ const CartPage = (): JSX.Element => {
     return sum + n;
   }, 0);
 
-  const totalPrices = _.map(getAllCarts(cartState), 'total');
+  const allProductsArray = getAllCarts(cartState)
+  const totalPrices = _.map(allProductsArray, 'total');
   const max = Math.max(...totalPrices);
   const min = Math.min(...totalPrices);
 
@@ -34,8 +35,7 @@ const CartPage = (): JSX.Element => {
   };
 
   const handleAcceptItem = (item: Record<string, any>) => {
-    const allProducts = getAllCarts(cartState)
-    const selectedProject = _.find(allProducts, item);
+    const selectedProject = _.find(allProductsArray, item);
     const filteredArray = rejectedItems.filter((value) => value !== item)
     
     setAcceptedItems((prevState) => {
@@ -53,8 +53,7 @@ const CartPage = (): JSX.Element => {
   }
 
   const handleRejectItem = (item: Record<string, any>) => {
-    const allProducts = getAllCarts(cartState)
-    const selectedProject = _.find(allProducts, item);
+    const selectedProject = _.find(allProductsArray, item);
     const filteredArray = acceptedItems.filter((value) => value !== item)
     console.log('rejectedfilteredArray --->>>', filteredArray)
     setRejectedItems((prevState) => {
@@ -72,84 +71,55 @@ const CartPage = (): JSX.Element => {
   }
 
   const handleAcceptAllItems = () => {
-    let items;
-    let acceptedItems: Record<string, any>[];
+    const acceptedProducts = _.uniqWith(allProductsArray, _.isEqual);
+    setAcceptedItems((prevState) => {
+      return [
+        ...acceptedProducts,
+      ]
+    });
+    setRejectedItems((prevState) => {
+      return []
+    });
 
-    if (activeCart !== cartState.length){
-      acceptedItems = _.uniqWith(cartState[activeCart]?.products, _.isEqual);
-      setAcceptedItems((prevState) => {
-        return [
-          ...prevState,
-          ...acceptedItems,
-        ]
-      });
-      setRejectedItems((prevState) => {
-        return [
-          ...prevState
-        ]
-      });
-    } else {
-      items = getAllCarts(cartState);
-      acceptedItems = _.uniqWith(items, _.isEqual);
-      setAcceptedItems((prevState) => {
-        return [
-          ...acceptedItems,
-        ]
-      });
-      setRejectedItems((prevState) => {
-        return []
-      });
-    }
-
-    
   };
 
   const handleRejectAllItems = () => {
-    let items;
-    let rejectedItems: Record<string, any>[];
-
-    if (activeCart !== cartState.length){
-      rejectedItems = _.uniqWith(cartState[activeCart]?.products, _.isEqual);
-      setRejectedItems((prevState) => {
-        return [
-          ...prevState,
-          ...rejectedItems,
-        ]
-      });
-      setAcceptedItems((prevState) => {
-        return [
-          ...prevState
-        ]
-      });
-      
-    } else {
-      items = getAllCarts(cartState);
-      rejectedItems = _.uniqWith(items, _.isEqual);
-      setRejectedItems((prevState) => {
-        return [
-          ...rejectedItems,
-        ]
-      });
-      setAcceptedItems((prevState) => {
-        return []
-      });
-    }
-
+    const rejectedProducts = _.uniqWith(allProductsArray, _.isEqual);
     setRejectedItems((prevState) => {
       return [
-        ...rejectedItems,
+        ...rejectedProducts,
       ]
     });
     setAcceptedItems((prevState) => {
       return []
     });
+
+  }
+
+  const handleContinue = () => {
+    const rejectedAndAcceptedArray = [...rejectedItems, ...acceptedItems];
+    const lengthOfRejectedAndAcceptedArray = rejectedAndAcceptedArray.length;
+    const lengthOfAllProducts = allProductsArray.length;
+
+    if (lengthOfRejectedAndAcceptedArray < lengthOfAllProducts) {
+      const remaining = _.xorWith(rejectedAndAcceptedArray, allProductsArray, _.isEqual);
+      setRejectedItems((prevState) => {
+        return [
+          ...prevState,
+          ...remaining
+        ]
+      });
+
+    } else {
+      console.log('continue')
+    }
   }
 
   const displayCorrectCart = (value:number) => {
     switch (value) {
       case cartState.length:
-        const allItems = getAllCarts(cartState);
-        const itemsFilteredByPrice = _.filter(allItems, function(value) { return value?.total <= filterValue; });
+        // const allItems = getAllCarts(cartState);
+        const itemsFilteredByPrice = _.filter(allProductsArray, function(value) { return value?.total <= filterValue; });
         return itemsFilteredByPrice.map((
           product, 
           idx: number
@@ -180,6 +150,8 @@ const CartPage = (): JSX.Element => {
     }
   }
 
+  console.log('acceptedItems ->', acceptedItems);
+  console.log('rejectedItems ->', rejectedItems)
 
   useEffect(() => {
     const carts = sessionStorage.getItem('cartState');
@@ -263,10 +235,7 @@ const CartPage = (): JSX.Element => {
               <button type='button' className='rejectBtn' onClick={handleRejectAllItems} >Reject All</button>
             </div>
           </div>
-          <div>
-            <p style={{textAlign: 'center'}}>There are a total of {displayCorrectCart(activeCart).length} items in this view</p>
-            <p id='warning'>*All Items left neither accepted nor rejected will be automatically rejected</p>
-          </div>
+          
           <div className="itemSection">
             <div className="flexRowBetween titles">
               <div className="title">
@@ -286,8 +255,12 @@ const CartPage = (): JSX.Element => {
               {displayCorrectCart(activeCart)}
             </div>
           </div>
+          <div>
+            <p style={{textAlign: 'center'}}>There are a total of {displayCorrectCart(activeCart).length} items in this view</p>
+            <p id='warning'>*All Items left neither accepted nor rejected will be automatically rejected</p>
+          </div>
           <div id='continueSection'>
-            <button type='button' id='continueBtn' onClick={handleAcceptAllItems}>Continue</button>
+            <button type='button' id='continueBtn' onClick={handleContinue}>Continue</button>
           </div>
         </div>
       </Frame>
