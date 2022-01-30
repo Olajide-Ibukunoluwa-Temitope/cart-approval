@@ -88,8 +88,8 @@ const CartPage = (): JSX.Element => {
         const data2 = await res2.json();
         
         console.log('data =>', [data1, data2])
+        Router.push('./confirmationPage');
         setSaving(false)
-        Router.push('./confirmationPage')
       })
       .catch(err => console.log(err))
       
@@ -102,8 +102,8 @@ const CartPage = (): JSX.Element => {
         const data2 = await res2.json();
 
         console.log('data =>', [data1, data2])
-        setSaving(false)
         Router.push('./confirmationPage')
+        setSaving(false)
       })
       .catch(err => console.log(err))
     }
