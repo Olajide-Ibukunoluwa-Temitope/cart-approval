@@ -14,8 +14,8 @@ button{
   font-family: 'Poppins', sans-serif;
 }
 
-#main {
-  padding: 3rem;
+.main {
+  padding: 2rem 3rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -30,27 +30,141 @@ button{
   width: 100%;
 }
 
-#itemsContainer{
-  width: 100%;
-  align-items: center;
-  max-height: 35rem;
-  overflow: auto;
-}
 
-.itemSection{
-  width: 75%;
-  margin: 0 auto;
-}
 
-.titles {
-  padding: 1rem 1.5rem 0.5rem;
-}
 
-.title{
-  width: 25%;
+.flexAlignItemCenter{
   display: flex;
-  justify-content: center;
-  text-align: center;
+  align-items: center;
 }
 
+#cartInputContainer{
+  margin-right: 1rem;
+}
 
+#cartInputSection{
+  margin: 2rem 0;
+}
+
+#cart{
+  padding: 0.4rem;
+  border-radius: 5px;
+  margin: 0 0.5rem;
+}
+
+#filterValue{
+  padding: 0.4rem;
+  border-radius: 5px;
+  margin-left: 1rem;
+}
+
+.acceptBtn{
+  padding: 0.6rem 1.5rem;
+  background-color: #4BB543;
+  border: none;
+  border-radius: 0.4rem;
+  color: white;
+  margin: 0 0.2rem;
+  cursor: pointer;
+}
+
+.rejectBtn{
+  padding: 0.6rem 1.5rem;
+  background-color: tomato;
+  border: none;
+  border-radius: 0.4rem;
+  color: white;
+  margin: 0 0.2rem;
+  cursor: pointer;
+}
+
+#cartOptionFeature{
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+#warning {
+  color: red;
+  margin: 0;
+}
+
+#continueSection{
+  /* margin-top: 1rem; */
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+#continueBtn{
+  padding: 0.8rem 2rem;
+  background-color: #4BB543;
+  border: none;
+  border-radius: 0.4rem;
+  color: white;
+  margin: 0 0.2rem;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+#loading{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+}
+
+.overviewContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.sectionContainer{
+  width: 50%;
+  padding: 1.5rem;
+  border-radius: 0.4rem;
+}
+
+#rejectedSectionContainer{
+  background-color: #DDDEE1;
+  margin: 1rem 0.4rem;
+}
+
+#acceptedSectionContainer {
+  background-color: #DCE1F0;
+  margin: 1rem 0.4rem;
+}
+
+#acceptedSectionContainer p {
+  margin: 0;
+}
+
+#rejectedSectionContainer p {
+  margin: 0;
+}
+
+#discountData {
+  background-color: #E6E8EF;
+  margin: 0 0.4rem;
+  height: 12rem;
+  overflow: auto;
+  padding: 1rem;
+}
+
+#totalData{
+  background-color: #fff;
+  margin: 0 0.4rem;
+  height: 12rem;
+  overflow: auto;
+  padding: 1rem;
+}
+
+#discountData h4{
+  margin: 0;
+}
+
+#totalData h4{
+  margin: 0;
+}
