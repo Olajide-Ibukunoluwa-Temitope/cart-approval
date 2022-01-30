@@ -1,23 +1,10 @@
-# Next.js + Jest
+# Getting Started
 
-This example shows how to configure Jest to work with Next.js.
+1. clone project on your local machine
+2. run yarn or npm install depending on whichever one you typically use to install all required packages
+3. run yarn dev or npm run dev to run app on local machine
 
-This includes Next.js' built-in support for Global CSS, CSS Modules and TypeScript.
+## Side Note
+In this project I used `https://dummyjson.com/docs/carts/` api instead of the one provided primarily because it is very similar to the one provided and it provides a bit more information in its response. I also noticed that the `https://fakestoreapi.com/docs` which was what was instructed to be used had repeated users in its response when fetching for carts, so for example it would return 5 carts where userIds were repeated which suggested it wasn't 5 different carts from different users.
 
-## How to Use
-
-Quickly get started using [Create Next App](https://github.com/vercel/next.js/tree/canary/packages/create-next-app#readme)!
-
-In your terminal, run the following command:
-
-```bash
-npx create-next-app --example with-jest with-jest-app
-# or
-yarn create next-app --example with-jest with-jest-app
-```
-
-## Run Jest Tests
-
-```bash
-npm test
-```
+As you'll see in my code `https://dummyjson.com/docs/carts/` was a suitable substitute
