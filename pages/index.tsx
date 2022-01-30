@@ -1,17 +1,19 @@
 import React, { useEffect, useState, } from "react";
 import CartItem from "@/components/CartItem/CartItem.comp";
 import Frame from "@/components/Frame/Frame.comp";
-import { CartContext } from "context/cartContext";
+import { CartContext } from "../context/cartContext";
 import _ from 'lodash';
-import { getAllCarts } from "utils";
+import { getAllCarts } from "../utils";
 import Router from "next/router";
 import ProductTable from "@/components/ProductTable/ProductTable.comp";
+import CartController from "../controller/cart.controller";
 
 const isBrowserLoaded = typeof window !== 'undefined';
 
 const CartPage = (): JSX.Element => {
-  const {cartState, totalWithOutDiscount, func, acceptedItems, rejectedItems} = React.useContext(CartContext);
+  const {cartState, totalAcceptedProductCostWithOutDiscount, func, acceptedItems, rejectedItems} = React.useContext(CartContext);
   const [isloading, setIsLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
   const [activeCart, setActiveCart] = useState<number>(0);
   const [filterValue, setFilterValue] = useState<number>(0);
 
@@ -30,12 +32,14 @@ const CartPage = (): JSX.Element => {
 
   const handleAcceptAllItems = () => {
     const acceptedProducts = _.uniqWith(allProductsArray, _.isEqual);
+
     func.setAcceptedItems(() => {
       sessionStorage.setItem('acceptedItems', JSON.stringify([...acceptedProducts]))
       return [
         ...acceptedProducts,
       ]
     });
+
     func.setRejectedItems(() => {
       sessionStorage.setItem('rejectedItems', JSON.stringify([]))
       return []
@@ -45,6 +49,7 @@ const CartPage = (): JSX.Element => {
 
   const handleRejectAllItems = () => {
     const rejectedProducts = _.uniqWith(allProductsArray, _.isEqual);
+
     func.setRejectedItems(() => {
       sessionStorage.setItem('rejectedItems', JSON.stringify([...rejectedProducts]))
       return [
@@ -58,13 +63,15 @@ const CartPage = (): JSX.Element => {
 
   }
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const rejectedAndAcceptedArray = [...rejectedItems, ...acceptedItems];
     const lengthOfRejectedAndAcceptedArray = rejectedAndAcceptedArray.length;
     const lengthOfAllProducts = allProductsArray.length;
+    setSaving(true)
 
     if (lengthOfRejectedAndAcceptedArray < lengthOfAllProducts) {
       const remaining = _.xorWith(rejectedAndAcceptedArray, allProductsArray, _.isEqual);
+
       func.setRejectedItems((prevState: Record<string, any>[]) => {
         sessionStorage.setItem('rejectedItems', JSON.stringify([...rejectedItems, ...remaining]))
         return [
@@ -72,10 +79,33 @@ const CartPage = (): JSX.Element => {
           ...remaining
         ]
       });
-      Router.push('./confirmationPage')
+      
+      Promise.all([
+        CartController.saveAcceptedProducts(acceptedItems), 
+        CartController.saveRejectedProducts(rejectedItems)
+      ]).then(async([res1, res2]) => {
+        const data1 = await res1.json();
+        const data2 = await res2.json();
+        
+        console.log('data =>', [data1, data2])
+        setSaving(false)
+        Router.push('./confirmationPage')
+      })
+      .catch(err => console.log(err))
+      
     } else {
-      console.log('continue')
-      Router.push('./confirmationPage')
+      Promise.all([
+        CartController.saveAcceptedProducts(acceptedItems), 
+        CartController.saveRejectedProducts(rejectedItems)
+      ]).then(async([res1, res2]) => {
+        const data1 = await res1.json();
+        const data2 = await res2.json();
+
+        console.log('data =>', [data1, data2])
+        setSaving(false)
+        Router.push('./confirmationPage')
+      })
+      .catch(err => console.log(err))
     }
   }
 
@@ -112,36 +142,59 @@ const CartPage = (): JSX.Element => {
   }
 
   useEffect(() => {
-    const carts = sessionStorage.getItem('cartState');
-    const parsedData = carts === null ? null :  JSON.parse(carts);
-    // console.log('parsedData ==>>>', parsedData);
-    // @ts-ignore: Unreachable code error
-    const acceptedProducts = JSON.parse(sessionStorage.getItem('acceptedItems'))
-    // @ts-ignore: Unreachable code error
-    const rejectedProducts = JSON.parse(sessionStorage.getItem('rejectedItems'))
+    const retrieveCartData = () => {
+      const carts = sessionStorage.getItem('cartState');
+      const parsedData = carts === null ? null :  JSON.parse(carts);
 
-    if (parsedData !== null) {
-      const totalPrices = _.map(getAllCarts(parsedData), 'total');
-      const max = Math.max(...totalPrices);
+      if (parsedData !== null) {
+        const totalPrices = _.map(getAllCarts(parsedData), 'total');
+        const max = Math.max(...totalPrices);
+  
+        func.setCartState(parsedData);
+        setActiveCart(parsedData.length);
+        setFilterValue(max);
+        setIsLoading(false)
+      } else {
+        fetch('https://dummyjson.com/carts?limit=5')
+          .then(res => res.json())
+          .then(data => {
+            const totalPrices = _.map(getAllCarts(data.carts), 'total');
+            const max = Math.max(...totalPrices);
+  
+            sessionStorage.setItem('cartState', JSON.stringify(data.carts))
+            func.setCartState(data.carts);
+            setActiveCart(data.carts.length)
+            setFilterValue(max)
+            setIsLoading(false)
+          }).catch(err => console.log(err))
+      }
+    };
 
-      func.setCartState(parsedData);
-      setActiveCart(parsedData.length);
-      setFilterValue(max);
-      setIsLoading(false)
-    } else {
-      fetch('https://dummyjson.com/carts?limit=5')
-        .then(res => res.json())
-        .then(data => {
-          const totalPrices = _.map(getAllCarts(data.carts), 'total');
-          const max = Math.max(...totalPrices);
+    const retreiveAcceptedProductsData = () => {
+      // @ts-ignore: Unreachable code error
+      const acceptedProducts = JSON.parse(sessionStorage.getItem('acceptedItems'));
 
-          sessionStorage.setItem('cartState', JSON.stringify(data.carts))
-          func.setCartState(data.carts);
-          setActiveCart(data.carts.length)
-          setFilterValue(max)
-          setIsLoading(false)
-        }).catch(err => console.log(err))
+      if (acceptedProducts !== null) {
+        func.setAcceptedItems(() => {
+          return acceptedProducts;
+        });
+      }
     }
+
+    const retreiveRejectedProductsData = () => {
+      // @ts-ignore: Unreachable code error
+      const rejectedProducts = JSON.parse(sessionStorage.getItem('rejectedItems'));
+
+      if (rejectedProducts !== null) {
+        func.setRejectedItems(() => {
+          return rejectedProducts;
+        });
+      }
+    }
+
+    retrieveCartData();
+    retreiveAcceptedProductsData();
+    retreiveRejectedProductsData();
     
   }, [isBrowserLoaded]);
 
@@ -158,7 +211,7 @@ const CartPage = (): JSX.Element => {
       <div className='main'>
         <div className="flexRowBetween">
           <h2>Droppe Xmas &#127876; | Cart(s)</h2>
-          <h2>Total: ${totalWithOutDiscount}</h2>
+          <h2>Total: ${totalAcceptedProductCostWithOutDiscount}</h2>
         </div>
         <div className="flexAlignItemCenter" id='cartOptionFeature'>
           <div className="flexAlignItemCenter" id='cartInputSection'>
@@ -194,7 +247,7 @@ const CartPage = (): JSX.Element => {
           <p id='warning'>*All Items left neither accepted nor rejected will be automatically rejected</p>
         </div>
         <div id='continueSection'>
-          <button type='button' id='continueBtn' onClick={handleContinue}>Continue</button>
+          <button type='button' id='continueBtn' onClick={handleContinue}>{saving ? 'Loading...' : 'Continue'}</button>
         </div>
       </div>
     </Frame>

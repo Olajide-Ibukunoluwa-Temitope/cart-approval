@@ -30,28 +30,8 @@ button{
   width: 100%;
 }
 
-.itemsContainer{
-  width: 100%;
-  align-items: center;
-  height: 26rem;
-  overflow: auto;
-}
 
-.itemSection{
-  width: 80%;
-  margin: 0 auto;
-}
 
-.titles {
-  padding: 1rem 1.5rem 0.5rem;
-}
-
-.title{
-  width: 25%;
-  display: flex;
-  justify-content: center;
-  text-align: center;
-}
 
 .flexAlignItemCenter{
   display: flex;
@@ -157,6 +137,14 @@ button{
   margin: 1rem 0.4rem;
 }
 
+#acceptedSectionContainer p {
+  margin: 0;
+}
+
+#rejectedSectionContainer p {
+  margin: 0;
+}
+
 #discountData {
   background-color: #E6E8EF;
   margin: 0 0.4rem;
@@ -171,4 +159,12 @@ button{
   height: 12rem;
   overflow: auto;
   padding: 1rem;
+}
+
+#discountData h4{
+  margin: 0;
+}
+
+#totalData h4{
+  margin: 0;
 }

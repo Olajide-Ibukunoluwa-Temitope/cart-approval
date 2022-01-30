@@ -1,13 +1,19 @@
 import Frame from '@/components/Frame/Frame.comp';
 import ProductTable from '@/components/ProductTable/ProductTable.comp';
 import { CartContext } from '../context/cartContext';
-import React from 'react';
+import React, {useEffect} from 'react';
 import CartItem from '@/components/CartItem/CartItem.comp';
-import { countDuplicatesInArray, getAllDiscounts, getAllProductIds, getDiscountsArray, getDuplicateProductsArray } from 'utils';
+import { 
+    countDuplicatesInArray, 
+    getAllDiscounts, 
+    getAllProductIds, 
+    getDiscountsArray, 
+    getDuplicateProductsArray 
+} from 'utils';
 import _ from 'lodash';
 
 const ConfirmationPage = () => {
-    const { totalWithOutDiscount, func, acceptedItems, rejectedItems} = React.useContext(CartContext);
+    const { func, totalAcceptedProductCostWithOutDiscount, totalRejectedProductCost, acceptedItems, rejectedItems} = React.useContext(CartContext);
 
     const displayRejectedList = () => {
         const list = rejectedItems.map((product: Record<string, any>, idx: number) => (
@@ -33,25 +39,47 @@ const ConfirmationPage = () => {
 
     const getDiscountsForProducts = () => {
         const allProductsIdArray = getAllProductIds(acceptedItems);
-        // console.log('countDuplicatesInArray ->', countDuplicatesInArray(d));
         const countOfAcceptedProductsPerCart = countDuplicatesInArray(allProductsIdArray);
-        // console.log('getDuplicateProductsArray ->', getDuplicateProductsArray(r));
         const arrayOfDuplicateProductId = getDuplicateProductsArray(countOfAcceptedProductsPerCart);
-        // console.log('getDiscountsArray ->', getDiscountsArray(t, r));
         const arrayOfpercentDiscount = getDiscountsArray(arrayOfDuplicateProductId, countOfAcceptedProductsPerCart);
         const discountData = getAllDiscounts(arrayOfDuplicateProductId, acceptedItems, arrayOfpercentDiscount, allProductsIdArray);
 
         return discountData;
     }
 
-    console.log('getDiscountsForProducts ==>', getDiscountsForProducts());
     const discountInfo = getDiscountsForProducts();
     const arrayOfDiscountPrices = discountInfo.map((value) => value?.discountedPrice);
     const totalDiscountsOnAllItems = _.reduce(arrayOfDiscountPrices, function(sum, n) {
         return sum + n;
     }, 0);
-    const amountToBePaid = totalWithOutDiscount - totalDiscountsOnAllItems;
+    const amountToBePaid = totalAcceptedProductCostWithOutDiscount - totalDiscountsOnAllItems;
     
+    useEffect(() => {
+        const retreiveAcceptedProductsData = () => {
+          // @ts-ignore: Unreachable code error
+          const acceptedProducts = JSON.parse(sessionStorage.getItem('acceptedItems'));
+    
+          if (acceptedProducts !== null) {
+            func.setAcceptedItems(() => {
+              return acceptedProducts;
+            });
+          }
+        }
+    
+        const retreiveRejectedProductsData = () => {
+          // @ts-ignore: Unreachable code error
+          const rejectedProducts = JSON.parse(sessionStorage.getItem('rejectedItems'));
+    
+          if (rejectedProducts !== null) {
+            func.setRejectedItems(() => {
+              return rejectedProducts;
+            });
+          }
+        }
+        retreiveAcceptedProductsData();
+        retreiveRejectedProductsData();
+        
+    }, []);
 
     return (
         <Frame>
@@ -80,9 +108,9 @@ const ConfirmationPage = () => {
                         {
                             discountInfo.length > 0 ? (
                                 <>
-                                    <p>Total Before Discount: ${Math.round(totalWithOutDiscount)}</p>
+                                    <p>Total Before Discount: ${Math.round(totalAcceptedProductCostWithOutDiscount)}</p>
                                     <p>Total After Discount: ${Math.round(amountToBePaid)}</p>
-                                    <p>Amount saved from discount: ${Math.round(totalWithOutDiscount - amountToBePaid)}</p>
+                                    <p>Amount saved from discount: ${Math.round(totalAcceptedProductCostWithOutDiscount - amountToBePaid)}</p>
                                 </>
                             ) : (
                                 <>
@@ -96,7 +124,15 @@ const ConfirmationPage = () => {
                 </div>
                 <div className='overviewContainer'>
                     <div className='sectionContainer' id='rejectedSectionContainer'>
-                        <h3>Rejected List</h3>
+                        <div>
+                            <div className='flexRowBetween'>
+                                <h3>Rejected List</h3>
+                                <h4>Total: ${totalRejectedProductCost}</h4>
+                            </div>
+                            <p>No of items in List: {rejectedItems.length}</p>
+                        </div>
+                        
+                        
                         <div>
                             <ProductTable width='100%'>
                                 {displayRejectedList()}
@@ -104,7 +140,14 @@ const ConfirmationPage = () => {
                         </div>
                     </div>
                     <div className='sectionContainer' id='acceptedSectionContainer'>
-                        <h3>Accepted List</h3>
+                        <div>
+                            <div className='flexRowBetween'>
+                                <h3>Accepted List</h3>
+                                <h4>Total: ${totalAcceptedProductCostWithOutDiscount}</h4>
+                            </div>
+                            <p>No of items in List: {acceptedItems.length}</p>
+                        </div>
+                        
                         <div>
                             <ProductTable width='100%'>
                                 {displayAcceptedList()}

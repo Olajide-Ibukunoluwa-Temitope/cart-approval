@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './CartItem.module.css';
-import { CartContext } from 'context/cartContext';
+import { CartContext } from '../../context/cartContext';
 import _ from 'lodash';
 
 interface CartItemProps {

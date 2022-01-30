@@ -1,0 +1,22 @@
+.itemsContainer{
+    width: 100%;
+    align-items: center;
+    height: 26rem;
+    overflow: auto;
+}
+
+.itemSection{
+    width: 80%;
+    margin: 0 auto;
+}
+  
+.titles {
+    padding: 1rem 1.5rem 0.5rem;
+}
+
+.title{
+    width: 25%;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
