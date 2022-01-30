@@ -2,24 +2,18 @@ import React, { useEffect, useState, } from "react";
 import CartItem from "@/components/CartItem/CartItem.comp";
 import Frame from "@/components/Frame/Frame.comp";
 import { CartContext } from "context/cartContext";
-import _, { filter } from 'lodash';
+import _ from 'lodash';
 import { getAllCarts } from "utils";
+import Router from "next/router";
+import ProductTable from "@/components/ProductTable/ProductTable.comp";
 
 const isBrowserLoaded = typeof window !== 'undefined';
 
 const CartPage = (): JSX.Element => {
-  const [cartState, setCartState] = useState<Array<Record<string, any>>>([]);
+  const {cartState, totalWithOutDiscount, func, acceptedItems, rejectedItems} = React.useContext(CartContext);
   const [isloading, setIsLoading] = useState<boolean>(true);
   const [activeCart, setActiveCart] = useState<number>(0);
-  const [acceptedItems, setAcceptedItems] = useState<Array<Record<string, any>>>([]);
-  const [rejectedItems, setRejectedItems] = useState<Array<Record<string, any>>>([]);
   const [filterValue, setFilterValue] = useState<number>(0);
-
-  const allTotalAcceptedPrices = _.map(acceptedItems, 'total');
-  
-  const totalAcceptedPrice = _.reduce(allTotalAcceptedPrices, function(sum, n) {
-    return sum + n;
-  }, 0);
 
   const allProductsArray = getAllCarts(cartState)
   const totalPrices = _.map(allProductsArray, 'total');
@@ -34,50 +28,16 @@ const CartPage = (): JSX.Element => {
     setFilterValue(Number(event.currentTarget.value));
   };
 
-  const handleAcceptItem = (item: Record<string, any>) => {
-    const selectedProject = _.find(allProductsArray, item);
-    const filteredArray = rejectedItems.filter((value) => value !== item)
-    
-    setAcceptedItems((prevState) => {
-      return [
-        ...prevState,
-        selectedProject
-      ]
-    });
-
-    setRejectedItems((prevState) => {
-      return [
-        ...filteredArray
-      ]
-    });
-  }
-
-  const handleRejectItem = (item: Record<string, any>) => {
-    const selectedProject = _.find(allProductsArray, item);
-    const filteredArray = acceptedItems.filter((value) => value !== item)
-    console.log('rejectedfilteredArray --->>>', filteredArray)
-    setRejectedItems((prevState) => {
-      return [
-        ...prevState,
-        selectedProject
-      ]
-    });
-
-    setAcceptedItems((prevState) => {
-      return [
-        ...filteredArray
-      ]
-    });
-  }
-
   const handleAcceptAllItems = () => {
     const acceptedProducts = _.uniqWith(allProductsArray, _.isEqual);
-    setAcceptedItems((prevState) => {
+    func.setAcceptedItems(() => {
+      sessionStorage.setItem('acceptedItems', JSON.stringify([...acceptedProducts]))
       return [
         ...acceptedProducts,
       ]
     });
-    setRejectedItems((prevState) => {
+    func.setRejectedItems(() => {
+      sessionStorage.setItem('rejectedItems', JSON.stringify([]))
       return []
     });
 
@@ -85,12 +45,14 @@ const CartPage = (): JSX.Element => {
 
   const handleRejectAllItems = () => {
     const rejectedProducts = _.uniqWith(allProductsArray, _.isEqual);
-    setRejectedItems((prevState) => {
+    func.setRejectedItems(() => {
+      sessionStorage.setItem('rejectedItems', JSON.stringify([...rejectedProducts]))
       return [
         ...rejectedProducts,
       ]
     });
-    setAcceptedItems((prevState) => {
+    func.setAcceptedItems(() => {
+      sessionStorage.setItem('acceptedItems', JSON.stringify([]))
       return []
     });
 
@@ -103,29 +65,28 @@ const CartPage = (): JSX.Element => {
 
     if (lengthOfRejectedAndAcceptedArray < lengthOfAllProducts) {
       const remaining = _.xorWith(rejectedAndAcceptedArray, allProductsArray, _.isEqual);
-      setRejectedItems((prevState) => {
+      func.setRejectedItems((prevState: Record<string, any>[]) => {
+        sessionStorage.setItem('rejectedItems', JSON.stringify([...rejectedItems, ...remaining]))
         return [
           ...prevState,
           ...remaining
         ]
       });
-
+      Router.push('./confirmationPage')
     } else {
       console.log('continue')
+      Router.push('./confirmationPage')
     }
   }
 
   const displayCorrectCart = (value:number) => {
     switch (value) {
       case cartState.length:
-        // const allItems = getAllCarts(cartState);
         const itemsFilteredByPrice = _.filter(allProductsArray, function(value) { return value?.total <= filterValue; });
         return itemsFilteredByPrice.map((
           product, 
           idx: number
         ) => {
-          // const cartIndex = _.findIndex(cartState, {products: [product]});
-
           return(
             <CartItem 
               key={idx}
@@ -150,19 +111,20 @@ const CartPage = (): JSX.Element => {
     }
   }
 
-  console.log('acceptedItems ->', acceptedItems);
-  console.log('rejectedItems ->', rejectedItems)
-
   useEffect(() => {
     const carts = sessionStorage.getItem('cartState');
     const parsedData = carts === null ? null :  JSON.parse(carts);
-    console.log('parsedData ==>>>', parsedData);
+    // console.log('parsedData ==>>>', parsedData);
+    // @ts-ignore: Unreachable code error
+    const acceptedProducts = JSON.parse(sessionStorage.getItem('acceptedItems'))
+    // @ts-ignore: Unreachable code error
+    const rejectedProducts = JSON.parse(sessionStorage.getItem('rejectedItems'))
 
     if (parsedData !== null) {
       const totalPrices = _.map(getAllCarts(parsedData), 'total');
       const max = Math.max(...totalPrices);
 
-      setCartState(parsedData);
+      func.setCartState(parsedData);
       setActiveCart(parsedData.length);
       setFilterValue(max);
       setIsLoading(false)
@@ -174,7 +136,7 @@ const CartPage = (): JSX.Element => {
           const max = Math.max(...totalPrices);
 
           sessionStorage.setItem('cartState', JSON.stringify(data.carts))
-          setCartState(data.carts);
+          func.setCartState(data.carts);
           setActiveCart(data.carts.length)
           setFilterValue(max)
           setIsLoading(false)
@@ -192,79 +154,50 @@ const CartPage = (): JSX.Element => {
   }
   
   return (
-    <CartContext.Provider 
-      value={{
-        cartState: cartState, 
-        acceptedItems: acceptedItems, 
-        rejectedItems: rejectedItems,
-        func: {
-          handleAcceptItem: handleAcceptItem,
-          handleRejectItem: handleRejectItem
-        }
-      }}
-    >
-      <Frame>
-        <div id='main'>
-          <div className="flexRowBetween">
-            <h2>Droppe Xmas &#127876; | Cart</h2>
-            <h2>Total: ${totalAcceptedPrice}</h2>
-          </div>
-          <div className="flexAlignItemCenter" id='cartOptionFeature'>
-            <div className="flexAlignItemCenter" id='cartInputSection'>
-              <div className="flexAlignItemCenter" id='cartInputContainer'>
-                <label htmlFor="cart">Select Cart:</label>
+    <Frame>
+      <div className='main'>
+        <div className="flexRowBetween">
+          <h2>Droppe Xmas &#127876; | Cart(s)</h2>
+          <h2>Total: ${totalWithOutDiscount}</h2>
+        </div>
+        <div className="flexAlignItemCenter" id='cartOptionFeature'>
+          <div className="flexAlignItemCenter" id='cartInputSection'>
+            <div className="flexAlignItemCenter" id='cartInputContainer'>
+              <label htmlFor="cart">Select Cart:</label>
+              
+              <select name="cart" id="cart" onChange={handleSelectCart}>
+                <option value={cartState.length}>All</option>
+                {cartState.map((value: any, idx: number) => (
+                  <option key={idx} value={idx}>Child {idx + 1}</option>
+                ))}
                 
-                <select name="cart" id="cart" onChange={handleSelectCart}>
-                  <option value={cartState.length}>All</option>
-                  {cartState.map((value, idx: number) => (
-                    <option key={idx} value={idx}>Child {idx + 1}</option>
-                  ))}
-                  
-                </select>
-              </div>
-              <div className="flexAlignItemCenter">
-                <label htmlFor="myRange" style={{marginRight: '0.6rem'}}>Filter By Price:</label>
-                <span>${min}</span>
-                <input type="range" min={min} max={max} className="slider" id="myRange" value={filterValue} onChange={handleChangeFilter} />
-                <span>${max}</span>
-                <input type='text' id='filterValue' value={filterValue} disabled />
-              </div>
+              </select>
             </div>
             <div className="flexAlignItemCenter">
-              <button type='button' className='acceptBtn' onClick={handleAcceptAllItems} >Accept All</button>
-              <button type='button' className='rejectBtn' onClick={handleRejectAllItems} >Reject All</button>
+              <label htmlFor="myRange" style={{marginRight: '0.6rem'}}>Filter By Price:</label>
+              <span>${min}</span>
+              <input type="range" min={min} max={max} className="slider" id="myRange" value={filterValue} onChange={handleChangeFilter} />
+              <span>${max}</span>
+              <input type='text' id='filterValue' value={filterValue} disabled />
             </div>
           </div>
-          
-          <div className="itemSection">
-            <div className="flexRowBetween titles">
-              <div className="title">
-                <span>Product Name</span>
-              </div>
-              <div className="title">
-                <span>Quantity</span>
-              </div>
-              <div className="title">
-                <span>Price</span>
-              </div>
-              <div className="title">
-                <span>Accept/Reject</span>
-              </div>
-            </div>
-            <div id='itemsContainer'>
-              {displayCorrectCart(activeCart)}
-            </div>
-          </div>
-          <div>
-            <p style={{textAlign: 'center'}}>There are a total of {displayCorrectCart(activeCart).length} items in this view</p>
-            <p id='warning'>*All Items left neither accepted nor rejected will be automatically rejected</p>
-          </div>
-          <div id='continueSection'>
-            <button type='button' id='continueBtn' onClick={handleContinue}>Continue</button>
+          <div className="flexAlignItemCenter">
+            <button type='button' className='acceptBtn' onClick={handleAcceptAllItems} >Accept All</button>
+            <button type='button' className='rejectBtn' onClick={handleRejectAllItems} >Reject All</button>
           </div>
         </div>
-      </Frame>
-    </CartContext.Provider>
+        <ProductTable>
+          {displayCorrectCart(activeCart)}
+        </ProductTable>
+        <div>
+          <p style={{textAlign: 'center'}}>There are a total of {displayCorrectCart(activeCart).length} items in this view</p>
+          <p id='warning'>*All Items left neither accepted nor rejected will be automatically rejected</p>
+        </div>
+        <div id='continueSection'>
+          <button type='button' id='continueBtn' onClick={handleContinue}>Continue</button>
+        </div>
+      </div>
+    </Frame>
   )
 };
 

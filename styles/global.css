@@ -14,7 +14,7 @@ button{
   font-family: 'Poppins', sans-serif;
 }
 
-#main {
+.main {
   padding: 2rem 3rem;
   display: flex;
   flex-direction: column;
@@ -30,7 +30,7 @@ button{
   width: 100%;
 }
 
-#itemsContainer{
+.itemsContainer{
   width: 100%;
   align-items: center;
   height: 26rem;
@@ -38,7 +38,7 @@ button{
 }
 
 .itemSection{
-  width: 75%;
+  width: 80%;
   margin: 0 auto;
 }
 
@@ -133,4 +133,42 @@ button{
   justify-content: center;
   height: 100vh;
   width: 100%;
+}
+
+.overviewContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.sectionContainer{
+  width: 50%;
+  padding: 1.5rem;
+  border-radius: 0.4rem;
+}
+
+#rejectedSectionContainer{
+  background-color: #DDDEE1;
+  margin: 1rem 0.4rem;
+}
+
+#acceptedSectionContainer {
+  background-color: #DCE1F0;
+  margin: 1rem 0.4rem;
+}
+
+#discountData {
+  background-color: #E6E8EF;
+  margin: 0 0.4rem;
+  height: 12rem;
+  overflow: auto;
+  padding: 1rem;
+}
+
+#totalData{
+  background-color: #fff;
+  margin: 0 0.4rem;
+  height: 12rem;
+  overflow: auto;
+  padding: 1rem;
 }

@@ -4,24 +4,13 @@ import { CartContext } from 'context/cartContext';
 import _ from 'lodash';
 
 interface CartItemProps {
-  // title: string;
-  // price: number;
-  // quantity: number;
-  // id: number;
-  // index: number;
-  // userId?: number;
-  // currentcartIndex?: number;
   item?: Record<string, any>;
 }
 
 const CartItem = (props: CartItemProps): JSX.Element => {
-  const {cartState, func, acceptedItems, rejectedItems} = React.useContext(CartContext);
+  const {func, acceptedItems, rejectedItems} = React.useContext(CartContext);
   const isAccepted = _.find(acceptedItems, props?.item);
   const isRejected = _.find(rejectedItems, props?.item);
-  // const selectCartIndex = _.findIndex(cartState, ['userId', props?.userId]);
-
-  // const isAccepted = itemInAcceptedItemArray ;
-  // const isRejected = itemInRejectedItemArray ;
   const bgColor = isAccepted ? '#b2ebb6' : isRejected ? '#fedae3' : '#e6e9ea';
   
 
